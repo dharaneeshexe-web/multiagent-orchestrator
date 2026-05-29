@@ -272,6 +272,6 @@ multiagent/
 
 ## Author
 
-**Dharaneesh** — B.Tech AIML, SNS College of Technology  
+**Dharaneesh** 
 GitHub: [@dharaneeshexe-web](https://github.com/dharaneeshexe-web)  
 HuggingFace: [@dharaneesh1212](https://huggingface.co/dharaneesh1212)
