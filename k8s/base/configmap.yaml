@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multiagent-config
+  namespace: multiagent
+data:
+  PRIMARY_MODEL: "llama-3.3-70b-versatile"
+  FALLBACK_MODEL: "llama3-8b-8192"
+  MAX_RETRY_LOOPS: "2"
+  HALLUCINATION_THRESHOLD: "6"
+  REDIS_URL: "redis://redis-service:6379/0"
+  QDRANT_URL: "http://qdrant-service:6333"
+  QDRANT_COLLECTION: "knowledge"
+  OTLP_ENDPOINT: "http://jaeger-service:4317"
+  # NOTE: password must match POSTGRES_PASSWORD in secret.yaml
+  DATABASE_URL: "postgresql+asyncpg://multiagent:change_this_password@postgres-service:5432/multiagent"
+  PREFECT_API_URL: "http://prefect-service:4200/api"
+  LANGCHAIN_TRACING_V2: "false"
+  LANGCHAIN_PROJECT: "multiagent-orchestrator"

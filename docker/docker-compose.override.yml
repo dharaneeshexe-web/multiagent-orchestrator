@@ -1,0 +1,27 @@
+# ── Development override ─────────────────────────────────────────────────────
+# Enables live-reload, debug endpoints, and extra tooling.
+# Usage: docker compose -f docker-compose.yml -f docker/docker-compose.override.yml up
+#
+# For production, omit this file or create a docker-compose.prod.yml.
+
+services:
+  api:
+    ports:
+      - "8000:8000"       # direct access for debugging (bypass Nginx)
+    environment:
+      - UVICORN_RELOAD=true
+
+  nginx:
+    ports:
+      - "80:80"
+
+  # ── Adminer (DB browser) ───────────────────────────────────────────────────
+  adminer:
+    image: adminer:4.8.1
+    container_name: multiagent_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    profiles:
+      - dev

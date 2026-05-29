@@ -1,0 +1,276 @@
+
+<h2 class="sr-only">MultiAgent Orchestrator evaluation dashboard showing benchmark results across 7 pipeline runs</h2>
+
+<style>
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;text-align:center}
+.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:24px;font-weight:500;color:var(--color-text-primary)}
+.metric-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin:0 0 12px;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:6px 8px;color:var(--color-text-tertiary);font-weight:500;font-size:11px;border-bottom:0.5px solid var(--color-border-tertiary);text-transform:uppercase;letter-spacing:.04em}
+td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-green{background:#EAF3DE;color:#27500A}
+.badge-yellow{background:#FAEEDA;color:#633806}
+.badge-red{background:#FCEBEB;color:#791F1F}
+.bar-bg{background:var(--color-background-secondary);border-radius:4px;height:8px;width:100%}
+.bar-fill{height:8px;border-radius:4px}
+</style>
+
+<div style="padding:1rem 0">
+
+<div class="grid4">
+  <div class="metric">
+    <div class="metric-label">Total runs</div>
+    <div class="metric-value">11</div>
+    <div class="metric-sub">7 success · 4 error</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Avg hallucination</div>
+    <div class="metric-value" style="color:#27500A">2.14<span style="font-size:14px;font-weight:400"> /10</span></div>
+    <div class="metric-sub">excellent quality</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Avg wall time</div>
+    <div class="metric-value">30.3<span style="font-size:14px;font-weight:400">s</span></div>
+    <div class="metric-sub">Groq free tier TPM</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Test coverage</div>
+    <div class="metric-value" style="color:#27500A">38/38</div>
+    <div class="metric-sub">0 failures · 14.2s</div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="section-title">Benchmark runs</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Score</th>
+          <th>Retries</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Transformer architecture</td>
+          <td><span class="badge badge-green">1 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">61.6s*</td>
+        </tr>
+        <tr>
+          <td>Backpropagation</td>
+          <td><span class="badge badge-green">2 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">10.6s</td>
+        </tr>
+        <tr>
+          <td>Supervised vs unsupervised</td>
+          <td><span class="badge badge-green">1 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">9.1s</td>
+        </tr>
+        <tr>
+          <td>BERT model</td>
+          <td><span class="badge badge-yellow">6 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">7.4s</td>
+        </tr>
+        <tr>
+          <td>What is a qubit?</td>
+          <td><span class="badge badge-green">1 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">10.3s</td>
+        </tr>
+        <tr>
+          <td>Backprop (run 2)</td>
+          <td><span class="badge badge-green">2 / 10</span></td>
+          <td>0</td>
+          <td style="color:var(--color-text-secondary)">58.0s*</td>
+        </tr>
+        <tr>
+          <td style="font-weight:500">Average</td>
+          <td><span class="badge badge-green">2.17</span></td>
+          <td style="font-weight:500">0</td>
+          <td style="color:var(--color-text-secondary);font-weight:500">26.2s</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--color-text-tertiary);margin:8px 0 0">*Rate-limited by Groq free tier (12k TPM). Paid tier ≈ 3–5s.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Hallucination score distribution</div>
+    <div style="position:relative;height:200px">
+      <canvas id="scoreChart" role="img" aria-label="Bar chart showing hallucination scores per run. Most runs scored 1-2 out of 10, one run scored 6.">Scores: transformer 1, backpropagation 2, supervised/unsupervised 1, BERT 6, qubit 1, backprop run 2 two.</canvas>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--color-text-secondary)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#639922"></span>Score ≤ 3 (clean)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517"></span>Score 4–6 (caution)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#E24B4A"></span>Score > 6 (retry)</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="section-title">Per-agent latency breakdown (ms)</div>
+    <div style="position:relative;height:220px">
+      <canvas id="latencyChart" role="img" aria-label="Horizontal bar chart showing average latency per agent. Researcher is slowest, executor fastest.">Planner ~1350ms, Researcher ~2740ms, Critic ~2785ms, Executor ~1450ms average.</canvas>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:10px;font-size:12px;color:var(--color-text-secondary)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#534AB7"></span>Avg latency per agent</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Test suite breakdown</div>
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px">test_agents.py</span>
+        <span style="font-size:13px;font-weight:500;color:#27500A">12 / 12</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#639922"></div></div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:3px">planner · researcher · critic · executor · routing · state</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px">test_api.py</span>
+        <span style="font-size:13px;font-weight:500;color:#27500A">13 / 13</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#639922"></div></div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:3px">health · run · stream · jobs · history · metrics · RAG</div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px">test_db.py</span>
+        <span style="font-size:13px;font-weight:500;color:#27500A">13 / 13</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#639922"></div></div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:3px">create · complete · fail · get · list · stats · pagination</div>
+    </div>
+    <div style="margin-top:16px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--color-text-secondary)">Total · runtime</span>
+      <span style="font-size:15px;font-weight:500;color:#27500A">38 passed · 14.2s</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Stack phases completed</div>
+  <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">1</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">LangGraph DAG</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">2</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">FastAPI + SSE</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">3</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">Celery + Redis</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">4</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">Qdrant RAG</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">5</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">OTEL + Grafana</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">6</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">Postgres + Prefect</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">7</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">K8s + Kustomize</div>
+    </div>
+    <div style="text-align:center;padding:10px 4px;background:#EAF3DE;border-radius:var(--border-radius-md)">
+      <div style="font-size:18px;font-weight:500;color:#27500A">8</div>
+      <div style="font-size:10px;color:#3B6D11;margin-top:2px">CI/CD Actions</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const scores = [1,2,1,6,1,2];
+const labels = ['Transformer','Backprop','Sup vs Unsup','BERT','Qubit','Backprop 2'];
+const colors = scores.map(s => s <= 3 ? '#639922' : s <= 6 ? '#BA7517' : '#E24B4A');
+const borderColors = scores.map(s => s <= 3 ? '#3B6D11' : s <= 6 ? '#854F0B' : '#A32D2D');
+
+new Chart(document.getElementById('scoreChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Hallucination score',
+      data: scores,
+      backgroundColor: colors,
+      borderColor: borderColors,
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 0, max: 10,
+        ticks: { stepSize: 2, font: { size: 11 }, color: '#888780' },
+        grid: { color: 'rgba(136,135,128,0.15)' }
+      },
+      x: {
+        ticks: { font: { size: 10 }, color: '#888780', maxRotation: 30 },
+        grid: { display: false }
+      }
+    }
+  }
+});
+
+new Chart(document.getElementById('latencyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Planner','Researcher','Critic','Executor'],
+    datasets: [{
+      label: 'Avg latency (ms)',
+      data: [1325, 2740, 2785, 1450],
+      backgroundColor: ['#CECBF6','#AFA9EC','#7F77DD','#534AB7'],
+      borderColor: ['#AFA9EC','#7F77DD','#534AB7','#3C3489'],
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { font: { size: 11 }, color: '#888780', callback: v => v + 'ms' },
+        grid: { color: 'rgba(136,135,128,0.15)' }
+      },
+      y: {
+        ticks: { font: { size: 12 }, color: '#888780' },
+        grid: { display: false }
+      }
+    }
+  }
+});
+</script>

@@ -1,0 +1,145 @@
+{
+  "title": "MultiAgent Orchestrator",
+  "uid": "multiagent-v2",
+  "schemaVersion": 36,
+  "version": 2,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+
+    { "id": 1, "title": "Total Pipeline Runs", "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 3 },
+      "options": { "colorMode": "background" },
+      "targets": [{ "expr": "pipeline_runs_total", "legendFormat": "total" }]
+    },
+
+    { "id": 2, "title": "Success Rate", "type": "stat",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 3 },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "percentunit",
+        "thresholds": { "steps": [
+          { "color": "red", "value": 0 },
+          { "color": "yellow", "value": 0.7 },
+          { "color": "green", "value": 0.9 }
+        ]}
+      }},
+      "targets": [{
+        "expr": "rate(pipeline_runs_total{status='success'}[10m]) / rate(pipeline_runs_total[10m])",
+        "legendFormat": "success rate"
+      }]
+    },
+
+    { "id": 3, "title": "Avg Hallucination Score", "type": "gauge",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 3 },
+      "fieldConfig": { "defaults": { "min": 1, "max": 10,
+        "thresholds": { "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "yellow", "value": 4 },
+          { "color": "red", "value": 7 }
+        ]}
+      }},
+      "targets": [{
+        "expr": "histogram_quantile(0.50, rate(hallucination_score_bucket[10m]))",
+        "legendFormat": "p50 score"
+      }]
+    },
+
+    { "id": 4, "title": "Runs / min", "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 3 },
+      "targets": [{ "expr": "rate(pipeline_runs_total[1m]) * 60", "legendFormat": "runs/min" }]
+    },
+
+    { "id": 5, "title": "Total Retries", "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 3 },
+      "targets": [{ "expr": "pipeline_retries_total", "legendFormat": "retries" }]
+    },
+
+    { "id": 6, "title": "Errors / min", "type": "stat",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 3 },
+      "options": { "colorMode": "background" },
+      "fieldConfig": { "defaults": {
+        "thresholds": { "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "red", "value": 0.1 }
+        ]}
+      }},
+      "targets": [{ "expr": "rate(pipeline_errors_total[1m]) * 60", "legendFormat": "errors/min" }]
+    },
+
+    { "id": 7, "title": "Agent Latency p50 / p95 (ms)", "type": "timeseries",
+      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(agent_latency_ms_bucket[2m]))", "legendFormat": "p95 {{agent}}" },
+        { "expr": "histogram_quantile(0.50, rate(agent_latency_ms_bucket[2m]))", "legendFormat": "p50 {{agent}}" }
+      ]
+    },
+
+    { "id": 8, "title": "Token Usage / min", "type": "timeseries",
+      "gridPos": { "x": 12, "y": 3, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(pipeline_tokens_total{type='prompt'}[1m]) * 60", "legendFormat": "prompt tokens/min" },
+        { "expr": "rate(pipeline_tokens_total{type='completion'}[1m]) * 60", "legendFormat": "completion tokens/min" }
+      ]
+    },
+
+    { "id": 9, "title": "Hallucination Score Distribution", "type": "timeseries",
+      "gridPos": { "x": 0, "y": 11, "w": 8, "h": 7 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(hallucination_score_bucket[5m]))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.50, rate(hallucination_score_bucket[5m]))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.10, rate(hallucination_score_bucket[5m]))", "legendFormat": "p10" }
+      ]
+    },
+
+    { "id": 10, "title": "RAG Chunks Retrieved", "type": "timeseries",
+      "gridPos": { "x": 8, "y": 11, "w": 8, "h": 7 },
+      "targets": [{
+        "expr": "histogram_quantile(0.50, rate(rag_chunks_retrieved_bucket[2m]))",
+        "legendFormat": "p50 chunks"
+      }]
+    },
+
+    { "id": 11, "title": "Pipeline Error Rate %", "type": "timeseries",
+      "gridPos": { "x": 16, "y": 11, "w": 8, "h": 7 },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "targets": [{
+        "expr": "rate(pipeline_errors_total[5m]) / rate(pipeline_runs_total[5m]) * 100",
+        "legendFormat": "error %"
+      }]
+    },
+
+    { "id": 12, "title": "Per-Agent Avg Latency (ms)", "type": "bargauge",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 6 },
+      "fieldConfig": { "defaults": { "unit": "ms",
+        "thresholds": { "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "yellow", "value": 2000 },
+          { "color": "red", "value": 5000 }
+        ]}
+      }},
+      "options": { "orientation": "horizontal" },
+      "targets": [{
+        "expr": "rate(agent_latency_ms_sum[10m]) / rate(agent_latency_ms_count[10m])",
+        "legendFormat": "{{agent}}"
+      }]
+    },
+
+    { "id": 13, "title": "Total Tokens Consumed", "type": "piechart",
+      "gridPos": { "x": 12, "y": 18, "w": 6, "h": 6 },
+      "targets": [
+        { "expr": "pipeline_tokens_total{type='prompt'}", "legendFormat": "Prompt" },
+        { "expr": "pipeline_tokens_total{type='completion'}", "legendFormat": "Completion" }
+      ]
+    },
+
+    { "id": 14, "title": "API Memory (MB)", "type": "timeseries",
+      "gridPos": { "x": 18, "y": 18, "w": 6, "h": 6 },
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } },
+      "targets": [{
+        "expr": "process_resident_memory_bytes / 1024 / 1024",
+        "legendFormat": "RSS MB"
+      }]
+    }
+  ]
+}
