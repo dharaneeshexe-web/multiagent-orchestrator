@@ -23,5 +23,7 @@ patches:
       kind: Deployment
       name: worker
 
-commonLabels:
-  environment: dev
+labels:
+  - pairs:
+      environment: dev
+    includeSelectors: false

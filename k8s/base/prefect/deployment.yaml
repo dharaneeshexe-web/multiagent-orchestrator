@@ -23,8 +23,13 @@ spec:
           env:
             - name: PREFECT_SERVER_API_HOST
               value: "0.0.0.0"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: multiagent-secrets
+                  key: POSTGRES_PASSWORD
             - name: PREFECT_API_DATABASE_CONNECTION_URL
-              value: "postgresql+asyncpg://multiagent:multiagent@postgres-service:5432/multiagent"
+              value: "postgresql+asyncpg://multiagent:$(POSTGRES_PASSWORD)@postgres-service:5432/multiagent"
           command: ["prefect", "server", "start", "--host", "0.0.0.0"]
           resources:
             requests:

@@ -28,5 +28,7 @@ patches:
       kind: Deployment
       name: worker
 
-commonLabels:
-  environment: prod
+labels:
+  - pairs:
+      environment: prod
+    includeSelectors: false
