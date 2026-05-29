@@ -80,7 +80,7 @@ async def test_run_endpoint_error(mock_get_session, client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_history_list_runs(client: AsyncClient):
+async def test_history_list_runs(mock_get_session, client: AsyncClient):
     resp = await client.get("/history")
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
