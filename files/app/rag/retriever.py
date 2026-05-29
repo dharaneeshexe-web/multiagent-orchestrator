@@ -86,7 +86,7 @@ def search(query: str, top_k: int = 5, source_filter: str | None = None, collect
             for hit, score in top
         ]
 
-    except Exception as exc:
+    except Exception:
         return []
 
 

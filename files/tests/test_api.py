@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
-from fastapi import FastAPI
 
 from api.main import app
-from graph.state import AgentState
 
 
 @pytest.fixture
@@ -35,7 +32,6 @@ async def test_health_returns_phase(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_run_endpoint_success(mock_get_session, client: AsyncClient):
-    from api.main import run_workflow_sync
 
     fake_result = {
         "final_answer": "Quantum computing uses qubits.",

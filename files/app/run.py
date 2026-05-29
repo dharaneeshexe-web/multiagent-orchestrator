@@ -5,18 +5,17 @@ Usage: python run.py "Your query here"
 
 import sys
 import time
-import json
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from graph.state import AgentState
-from graph.workflow import workflow
+from graph.state import AgentState  # noqa: E402
+from graph.workflow import workflow  # noqa: E402
 
 
 def run(query: str) -> None:
     print("\n" + "=" * 60)
-    print(f"  MULTIAGENT ORCHESTRATOR — Phase 1")
+    print("  MULTIAGENT ORCHESTRATOR — Phase 1")
     print("=" * 60)
     print(f"  Query: {query}")
     print("=" * 60 + "\n")
@@ -39,7 +38,7 @@ def run(query: str) -> None:
     print(f"  Prompt tokens       : {result['token_usage'].get('prompt', 0)}")
     print(f"  Completion tokens   : {result['token_usage'].get('completion', 0)}")
     print(f"  Wall time           : {wall_time} ms")
-    print(f"\n  Per-agent latency:")
+    print("\n  Per-agent latency:")
     for agent, ms in result.get("latency_ms", {}).items():
         print(f"    {agent:<20} {ms} ms")
 

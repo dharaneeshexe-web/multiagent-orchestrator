@@ -1,4 +1,3 @@
-from prefect.client.schemas.schedules import CronSchedule
 from prefect_flows.flows import scheduled_pipeline_run, db_maintenance_flow
 
 

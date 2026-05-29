@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from config.settings import settings
 from rag.ingest import ingest_raw
-from rag.retriever import retrieve, RetrievedChunk
+from rag.retriever import retrieve
 
 router = APIRouter(prefix="/rag", tags=["rag"])
 

@@ -10,7 +10,6 @@ Tasks:
 from __future__ import annotations
 
 import time
-import logging
 from typing import Any
 
 from celery import Task

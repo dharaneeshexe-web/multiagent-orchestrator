@@ -9,7 +9,6 @@ import pytest
 from langchain_core.messages import AIMessage
 
 from graph.state import AgentState
-from config.settings import settings
 
 
 # ── Environment ────────────────────────────────────────────────────────────────

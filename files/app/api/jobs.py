@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from worker.celery_app import celery_app
-from worker.tasks import run_agent_pipeline, health_check
+from worker.tasks import health_check
 
 router = APIRouter()
 

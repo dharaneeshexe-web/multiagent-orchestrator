@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Optional
 
 from prefect import flow, task, get_run_logger
-from prefect.tasks import task_input_hash
-from datetime import timedelta
 
 from graph.state import AgentState
 from graph.workflow import workflow
 from db.session import get_session
-from db.repository import create_run, complete_run, fail_run, get_stats
+from db.repository import create_run, complete_run, get_stats
 from rag.ingest import ingest_raw
 
 
@@ -52,7 +49,8 @@ async def persist_result_task(query: str, result: dict, trigger_source: str = "p
 
 @task(name="ingest-url", retries=1, retry_delay_seconds=5)
 async def ingest_url_task(url: str) -> int:
-    import httpx, re
+    import httpx
+    import re
     logger = get_run_logger()
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(url, follow_redirects=True)
@@ -66,7 +64,7 @@ async def ingest_url_task(url: str) -> int:
 
 @task(name="db-purge-old-runs")
 async def purge_old_runs_task(days: int = 30) -> int:
-    from sqlalchemy import delete, text
+    from sqlalchemy import text
     from db.session import get_session
 
     async with get_session() as session:

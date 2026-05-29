@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-from typing import Iterator
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance

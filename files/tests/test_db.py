@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import os
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -16,7 +14,6 @@ pytestmark = pytest.mark.asyncio
 class TestCreateRun:
     async def test_creates_run_with_query(self, mock_db_session):
         from db.repository import create_run
-        from db.models import PipelineRun
 
         result = await create_run(mock_db_session, query="What is AI?")
         assert result is not None
@@ -26,7 +23,7 @@ class TestCreateRun:
     async def test_creates_run_with_trigger(self, mock_db_session):
         from db.repository import create_run
 
-        result = await create_run(
+        await create_run(
             mock_db_session,
             query="Test",
             trigger_source="celery",
@@ -40,7 +37,7 @@ class TestCreateRun:
     async def test_creates_run_default_trigger(self, mock_db_session):
         from db.repository import create_run
 
-        result = await create_run(mock_db_session, query="Default")
+        await create_run(mock_db_session, query="Default")
         added = mock_db_session.add.call_args[0][0]
         assert added.trigger_source == "api"
 
