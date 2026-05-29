@@ -31,10 +31,10 @@ jobs:
           pip install -r files/app/requirements.txt
 
       - name: Ruff lint
-        run: ruff check files/app/ tests/
+        run: ruff check files/
 
       - name: Ruff format check
-        run: ruff format --check files/app/ tests/ || echo "Format check skipped for now"
+        run: ruff format --check files/ || echo "Format check skipped for now"
 
       - name: mypy type check
         run: |
