@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MultiAgent Pipeline</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0b14;
+    --surface: #13131f;
+    --card: #1a1a2e;
+    --card-hover: #1f1f36;
+    --border: #2a2a4a;
+    --text: #e0e0f0;
+    --text-dim: #707090;
+    --accent: #00d4ff;
+    --accent-dim: rgba(0,212,255,0.15);
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,0.15);
+    --red: #ff4466;
+    --amber: #ffbb33;
+    --radius: 10px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  html { font-size: 14px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 svg { width: 22px; height: 22px; }
+  .header-actions { display: flex; gap: 8px; }
+  .header-actions button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .header-actions button:hover { background: var(--card-hover); color: var(--text); border-color: var(--accent); }
+  .header-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Query Bar ── */
+  .query-bar {
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .query-form { display: flex; gap: 10px; align-items: center; }
+  .query-form input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: var(--font);
+  }
+  .query-form input:focus { border-color: var(--accent); }
+  .query-form input::placeholder { color: var(--text-dim); }
+  .query-form button {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .query-form button:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+  .query-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Main Layout ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Pipeline Panel (left) ── */
+  .pipeline-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pipeline-panel h2 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .pipe-node {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .pipe-node + .pipe-node { margin-top: 2px; }
+  .pipe-node .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s;
+    background: var(--border);
+  }
+  .pipe-node.pending .status-dot { background: var(--border); }
+  .pipe-node.running .status-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+  .pipe-node.completed .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green-dim); }
+  .pipe-node.error .status-dot { background: var(--red); box-shadow: 0 0 6px rgba(255,68,102,0.4); }
+  .pipe-node.skipped .status-dot { background: var(--text-dim); opacity: 0.4; }
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+  .pipe-node .node-info { flex: 1; min-width: 0; }
+  .pipe-node .node-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .pipe-node .node-status {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .pipe-node .node-meta {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: right;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  .pipe-node.completed .node-name { color: var(--green); }
+  .pipe-node.running { border-color: var(--accent-dim); background: rgba(0,212,255,0.06); }
+  .pipe-node.running .node-name { color: var(--accent); }
+  .pipe-node.completed { border-color: var(--green-dim); }
+  .pipe-node.error { border-color: rgba(255,68,102,0.3); }
+  .pipe-node.error .node-name { color: var(--red); }
+  .pipe-node .retry-badge {
+    font-size: 0.6rem;
+    background: rgba(255,187,51,0.15);
+    color: var(--amber);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+
+  /* ── Connector lines ── */
+  .pipe-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    color: var(--border);
+    font-size: 0.6rem;
+  }
+  .pipe-connector .line {
+    width: 2px;
+    height: 14px;
+    background: var(--border);
+    border-radius: 1px;
+  }
+  .pipe-connector.active .line { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+  .pipe-connector.done .line { background: var(--green); }
+  .pipe-branch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding-left: 22px;
+  }
+  .pipe-branch .pipe-node { font-size: 0.8rem; }
+  .pipe-branch .pipe-node .node-name { font-size: 0.8rem; }
+  .pipe-converge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    gap: 4px;
+  }
+  .pipe-converge .line { width: 2px; height: 10px; background: var(--border); border-radius: 1px; }
+  .pipe-converge.done .line { background: var(--green); }
+
+  /* ── Content Panel (right) ── */
+  .content-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Agent Log ── */
+  .log-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-section h2 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    padding: 12px 20px 8px;
+    flex-shrink: 0;
+  }
+  .log-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .log-scroll:empty::after {
+    content: 'Agent outputs will appear here...';
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    padding: 20px 0;
+    font-style: italic;
+  }
+  .log-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(42,42,74,0.4);
+    animation: fade-in 0.25s ease-out;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .log-entry .log-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .log-entry .log-agent {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .log-entry .log-latency {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+  .log-entry .log-time {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+  .log-entry .log-body {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #c0c0d8;
+    white-space: pre-wrap;
+    font-family: var(--mono);
+    background: rgba(0,0,0,0.2);
+    padding: 8px 10px;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .log-entry.agent-planner .log-agent { color: var(--accent); }
+  .log-entry.agent-researcher .log-agent { color: #7c7cff; }
+  .log-entry.agent-critic .log-agent { color: var(--amber); }
+  .log-entry.agent-cost_monitor .log-agent { color: #ff88cc; }
+  .log-entry.agent-router .log-agent { color: #88ddff; }
+  .log-entry.agent-executor .log-agent { color: var(--green); }
+  .log-entry.agent-retry .log-agent { color: var(--red); }
+
+  /* ── Metrics Bar ── */
+  .metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .metric-tile {
+    padding: 12px 16px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .metric-tile:last-child { border-right: none; }
+  .metric-tile .metric-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .metric-tile .metric-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+  .metric-tile .metric-value.highlight-accent { color: var(--accent); }
+  .metric-tile .metric-value.highlight-green { color: var(--green); }
+  .metric-tile .metric-value.highlight-amber { color: var(--amber); }
+  .metric-tile .metric-value.highlight-red { color: var(--red); }
+
+  /* ── Final Answer ── */
+  .answer-section {
+    flex-shrink: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+  }
+  .answer-section.visible { max-height: 400px; }
+  .answer-inner {
+    padding: 16px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .answer-inner h2 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .answer-inner .answer-body {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    white-space: pre-wrap;
+    font-family: var(--mono);
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  /* ── History Sidebar (overlay) ── */
+  .history-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .history-overlay.open { opacity: 1; pointer-events: auto; }
+  .history-panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 400px;
+    max-width: 90vw;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 101;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.5);
+  }
+  .history-panel.open { transform: translateX(0); }
+  .history-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .history-header h2 { font-size: 1rem; font-weight: 600; }
+  .history-header button {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 1.4rem; cursor: pointer; padding: 4px;
+    transition: color 0.15s;
+  }
+  .history-header button:hover { color: var(--text); }
+  .history-stats {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .history-stats span strong { color: var(--text); font-weight: 600; }
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .history-list:empty::after {
+    content: 'No past runs yet. Run a query to see history.';
+    display: block;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    padding: 24px 20px;
+    font-style: italic;
+  }
+  .history-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid rgba(42,42,74,0.3);
+  }
+  .history-item:hover { background: var(--card); }
+  .history-item .h-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .history-item .h-status {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .history-item .h-status.success { background: var(--green); }
+  .history-item .h-status.error { background: var(--red); }
+  .history-item .h-status.running { background: var(--accent); animation: pulse-dot 1s infinite; }
+  .history-item .h-query {
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .history-item .h-meta {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    padding-left: 16px;
+    display: flex;
+    gap: 12px;
+  }
+  .history-loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+  /* ── Empty State ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-dim);
+    gap: 12px;
+    padding: 40px;
+  }
+  .empty-state svg { width: 48px; height: 48px; opacity: 0.3; }
+  .empty-state p { font-size: 0.85rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 820px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .pipeline-panel { border-right: none; border-bottom: 1px solid var(--border); max-height: 200px; }
+    .metrics-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header>
+  <h1>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="2"/><path d="M12 2v4"/><path d="M12 18v4"/>
+      <path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/>
+      <path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/>
+    </svg>
+    MultiAgent Pipeline
+  </h1>
+  <div class="header-actions">
+    <button id="historyBtn" title="View run history">&#128196; History</button>
+    <button id="resetBtn" title="Reset view" disabled>&#8635; Reset</button>
+  </div>
+</header>
+
+<!-- ─── Query Bar ─── -->
+<div class="query-bar">
+  <form class="query-form" id="queryForm">
+    <input type="text" id="queryInput" placeholder="Ask a question..." autocomplete="off" autofocus>
+    <button type="submit" id="runBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      Run
+    </button>
+  </form>
+</div>
+
+<!-- ─── Main Grid ─── -->
+<div class="main-grid">
+  <!-- Left: Pipeline Visualization -->
+  <div class="pipeline-panel">
+    <h2>Pipeline</h2>
+    <div id="pipelineContainer"></div>
+  </div>
+
+  <!-- Right: Content -->
+  <div class="content-panel">
+    <div class="log-section">
+      <h2>Agent Log</h2>
+      <div class="log-scroll" id="logScroll"></div>
+    </div>
+
+    <div class="metrics-bar" id="metricsBar">
+      <div class="metric-tile">
+        <div class="metric-label">Latency</div>
+        <div class="metric-value" id="metricLatency">—</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Tokens</div>
+        <div class="metric-value" id="metricTokens">—</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Cost</div>
+        <div class="metric-value" id="metricCost">—</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Hallucination</div>
+        <div class="metric-value" id="metricHallucination">—</div>
+      </div>
+    </div>
+
+    <div class="answer-section" id="answerSection">
+      <div class="answer-inner">
+        <h2>&#128172; Final Answer</h2>
+        <div class="answer-body" id="answerBody"></div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+      <p>Enter a query above and hit <strong>Run</strong> to see the agent pipeline in action.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── History ─── -->
+<div class="history-overlay" id="historyOverlay"></div>
+<div class="history-panel" id="historyPanel">
+  <div class="history-header">
+    <h2>&#128196; Run History</h2>
+    <button id="historyCloseBtn">&times;</button>
+  </div>
+  <div class="history-stats" id="historyStats"></div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<script>
+// ── Pipeline Node Definitions ──
+const PIPELINE_DEF = [
+  { id: 'planner',        label: 'Planner',      icon: 'P' },
+  { kind: 'connector' },
+  { id: 'researcher',    label: 'Researcher',   icon: 'R' },
+  { kind: 'branch-start' },
+  { kind: 'connector', cols: 2 },
+  { kind: 'branch', nodes: [
+    { id: 'critic',       label: 'Critic',       icon: 'C' },
+    { id: 'cost_monitor', label: 'Cost Monitor', icon: '$' },
+  ]},
+  { kind: 'converge' },
+  { kind: 'connector' },
+  { id: 'router_node',   label: 'Router',       icon: 'R' },
+  { kind: 'connector' },
+  { id: 'executor',      label: 'Executor',     icon: 'E' },
+];
+
+const AGENT_LABELS = {
+  planner: 'Planner', researcher: 'Researcher', critic: 'Critic',
+  cost_monitor: 'Cost Monitor', router_node: 'Router',
+  increment_retry: 'Retry Counter', executor: 'Executor',
+};
+
+const AGENT_ORDER = ['planner','researcher','critic','cost_monitor','router_node','increment_retry','executor'];
+
+// ── State ──
+let eventSource = null;
+let isRunning = false;
+let currentQuery = '';
+const agentState = {};
+let pendingRetry = false;
+
+AGENT_ORDER.forEach(id => {
+  agentState[id] = { status: 'pending', latency: null, score: null, cost: null, tokens: null };
+});
+
+// ── Render Pipeline ──
+function renderPipeline() {
+  const container = document.getElementById('pipelineContainer');
+  container.innerHTML = '';
+  PIPELINE_DEF.forEach(def => {
+    if (def.kind === 'connector') {
+      const div = document.createElement('div');
+      div.className = 'pipe-connector';
+      div.id = 'conn-' + (def.cols ? 'branch' : Math.random().toString(36).slice(2));
+      div.innerHTML = '<div class="line"></div>';
+      container.appendChild(div);
+    } else if (def.kind === 'branch-start') {
+      const div = document.createElement('div');
+      div.className = 'pipe-branch';
+      div.id = 'branch-start';
+      container.appendChild(div);
+    } else if (def.kind === 'branch') {
+      const div = document.createElement('div');
+      div.className = 'pipe-branch';
+      div.id = 'branch-nodes';
+      def.nodes.forEach(n => {
+        const node = createNodeEl(n.id, n.label);
+        div.appendChild(node);
+      });
+      container.appendChild(div);
+    } else if (def.kind === 'converge') {
+      const div = document.createElement('div');
+      div.className = 'pipe-converge';
+      div.id = 'converge-line';
+      div.innerHTML = '<div class="line"></div><div class="line"></div>';
+      container.appendChild(div);
+    } else {
+      const node = createNodeEl(def.id, def.label);
+      container.appendChild(node);
+    }
+  });
+}
+
+function createNodeEl(id, label) {
+  const div = document.createElement('div');
+  div.className = 'pipe-node pending';
+  div.id = 'node-' + id;
+  const st = agentState[id];
+  div.innerHTML = `
+    <div class="status-dot"></div>
+    <div class="node-info">
+      <div class="node-name">${label}</div>
+      <div class="node-status">${st && st.status === 'completed' ? 'Complete' : st && st.status === 'running' ? 'Running...' : 'Waiting'}</div>
+    </div>
+    <div class="node-meta"></div>
+  `;
+  return div;
+}
+
+function updateNode(id, state) {
+  const el = document.getElementById('node-' + id);
+  if (!el) return;
+  el.className = 'pipe-node ' + state.status;
+  const st = agentState[id];
+  const statusText = el.querySelector('.node-status');
+  const metaEl = el.querySelector('.node-meta');
+  if (state.status === 'running') statusText.textContent = 'Running...';
+  else if (state.status === 'completed') statusText.textContent = 'Complete';
+  else if (state.status === 'error') statusText.textContent = 'Error';
+  else statusText.textContent = 'Waiting';
+  let meta = '';
+  if (st.latency != null) meta += (st.latency / 1000).toFixed(2) + 's';
+  if (st.score != null) meta += (meta ? ' | ' : '') + st.score + '/10';
+  metaEl.textContent = meta;
+  if (state.status === 'completed' && id === 'researcher') {
+    statusText.textContent = pendingRetry ? 'Retrying...' : 'Complete';
+  }
+}
+
+function updateConnector(index, status) {
+  const els = document.querySelectorAll('.pipe-connector, .pipe-converge');
+  if (els[index]) {
+    els[index].className = els[index].className.replace(/ (active|done)/g, '');
+    if (status === 'active') els[index].classList.add('active');
+    else if (status === 'done') els[index].classList.add('done');
+  }
+}
+
+function resetPipeline() {
+  AGENT_ORDER.forEach(id => {
+    agentState[id] = { status: 'pending', latency: null, score: null, cost: null, tokens: null };
+    updateNode(id, { status: 'pending' });
+  });
+  pendingRetry = false;
+  document.querySelectorAll('.pipe-connector, .pipe-converge').forEach(el => {
+    el.className = el.className.replace(/ (active|done)/g, '');
+  });
+  document.getElementById('answerSection').classList.remove('visible');
+  document.getElementById('answerBody').textContent = '';
+  document.getElementById('metricLatency').textContent = '—';
+  document.getElementById('metricTokens').textContent = '—';
+  document.getElementById('metricCost').textContent = '—';
+  document.getElementById('metricHallucination').textContent = '—';
+}
+
+// ── Log ──
+function addLogEntry(agentId, label, data, meta) {
+  const scroll = document.getElementById('logScroll');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry agent-' + agentId;
+  const time = new Date().toLocaleTimeString();
+  const latency = meta && meta.latency_ms != null ? ` (${(meta.latency_ms / 1000).toFixed(2)}s)` : '';
+  entry.innerHTML = `
+    <div class="log-header">
+      <span class="log-agent">${label}</span>
+      <span class="log-latency">${latency}</span>
+      <span class="log-time">${time}</span>
+    </div>
+    <div class="log-body">${escapeHtml(data)}</div>
+  `;
+  scroll.appendChild(entry);
+  scroll.scrollTop = scroll.scrollHeight;
+  document.getElementById('emptyState').style.display = 'none';
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Metrics ──
+function updateMetrics(meta) {
+  if (!meta) return;
+  if (meta.wall_time_ms != null) {
+    document.getElementById('metricLatency').textContent = (meta.wall_time_ms / 1000).toFixed(2) + 's';
+    document.getElementById('metricLatency').className = 'metric-value highlight-accent';
+  }
+  const tokens = meta.token_usage || {};
+  const total = (tokens.prompt || 0) + (tokens.completion || 0);
+  if (total > 0) {
+    document.getElementById('metricTokens').textContent = total.toLocaleString();
+    document.getElementById('metricTokens').className = 'metric-value';
+  }
+  if (meta.cost_estimate != null) {
+    document.getElementById('metricCost').textContent = '$' + meta.cost_estimate.toFixed(5);
+    document.getElementById('metricCost').className = 'metric-value highlight-green';
+  }
+  if (meta.hallucination_score != null) {
+    const el = document.getElementById('metricHallucination');
+    const s = meta.hallucination_score;
+    el.textContent = s + '/10';
+    el.className = 'metric-value ' + (s <= 3 ? 'highlight-green' : s <= 6 ? 'highlight-amber' : 'highlight-red');
+  }
+}
+
+// ── SSE / Run ──
+function startRun(query) {
+  if (isRunning) return;
+  isRunning = true;
+  currentQuery = query;
+  document.getElementById('queryInput').value = query;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('answerSection').classList.remove('visible');
+  document.getElementById('logScroll').innerHTML = '';
+  resetPipeline();
+
+  const url = '/stream?query=' + encodeURIComponent(query);
+  const es = new EventSource(url);
+  eventSource = es;
+
+  es.onmessage = (e) => {
+    if (e.data === '[DONE]') {
+      es.close();
+      eventSource = null;
+      isRunning = false;
+      document.getElementById('runBtn').disabled = false;
+      loadHistory();
+      return;
+    }
+    try {
+      const ev = JSON.parse(e.data);
+      handleEvent(ev);
+    } catch (err) {
+      console.warn('SSE parse error:', err);
+    }
+  };
+
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) {
+      es.close();
+      eventSource = null;
+      isRunning = false;
+      document.getElementById('runBtn').disabled = false;
+    }
+  };
+}
+
+function handleEvent(ev) {
+  const node = ev.node || ev.agent?.toLowerCase().replace(/\s+/g, '_');
+  const agentId = Object.keys(AGENT_LABELS).find(k => k === node) || node;
+
+  if (ev.event === 'agent_complete' && agentId) {
+    if (agentState[agentId]) {
+      // Handle retry loop: if researcher runs again, mark as retry
+      if (agentId === 'researcher' && pendingRetry) {
+        addLogEntry('retry', 'Retry Counter', 'Retry triggered — looping back to Researcher', ev.meta);
+      }
+      const prevStatus = agentState[agentId].status;
+      agentState[agentId].status = 'completed';
+      if (ev.meta && ev.meta.latency_ms != null) agentState[agentId].latency = ev.meta.latency_ms;
+      if (ev.meta && ev.meta.hallucination_score != null) agentState[agentId].score = ev.meta.hallucination_score;
+      if (ev.meta && ev.meta.cost_estimate != null) agentState[agentId].cost = ev.meta.cost_estimate;
+      if (ev.meta && ev.meta.tokens) agentState[agentId].tokens = ev.meta.tokens;
+
+      updateNode(agentId, { status: 'completed' });
+      addLogEntry(agentId, ev.agent || AGENT_LABELS[agentId], ev.data || '', ev.meta);
+
+      if (agentId === 'increment_retry') {
+        pendingRetry = true;
+      }
+    }
+    // Update connectors
+    const idx = AGENT_ORDER.indexOf(agentId);
+    if (idx >= 0) updateConnector(idx, 'done');
+
+  } else if (ev.event === 'final') {
+    document.getElementById('answerBody').textContent = ev.data || '';
+    document.getElementById('answerSection').classList.add('visible');
+    const wall = ev.meta?.latency_ms ? Object.values(ev.meta.latency_ms).reduce((a, b) => a + b, 0) : null;
+    updateMetrics({ ...ev.meta, wall_time_ms: wall });
+
+  } else if (ev.event === 'error') {
+    isRunning = false;
+    document.getElementById('runBtn').disabled = false;
+    addLogEntry('error', 'Error', ev.data || 'Unknown error', {});
+  }
+}
+
+// ── History ──
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history?limit=20');
+    if (!res.ok) return;
+    const runs = await res.json();
+    renderHistoryList(runs);
+
+    const statsRes = await fetch('/api/history/stats');
+    if (statsRes.ok) {
+      const stats = await statsRes.json();
+      document.getElementById('historyStats').innerHTML = `
+        <span>Total: <strong>${stats.total_runs || 0}</strong></span>
+        <span>Success: <strong>${stats.successful_runs || 0}</strong></span>
+        <span>Errors: <strong>${stats.error_runs || 0}</strong></span>
+        <span>Avg Score: <strong>${stats.avg_hallucination_score != null ? stats.avg_hallucination_score.toFixed(1) : '—'}/10</strong></span>
+      `;
+    }
+  } catch (e) {
+    console.warn('History load failed:', e);
+  }
+}
+
+function renderHistoryList(runs) {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  if (!runs || runs.length === 0) return;
+  runs.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const statusClass = r.status === 'success' ? 'success' : r.status === 'error' ? 'error' : 'running';
+    const time = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+    item.innerHTML = `
+      <div class="h-top">
+        <div class="h-status ${statusClass}"></div>
+        <div class="h-query">${escapeHtml(r.query)}</div>
+      </div>
+      <div class="h-meta">
+        <span>${time}</span>
+        ${r.hallucination_score != null ? `<span>Score: ${r.hallucination_score}/10</span>` : ''}
+        ${r.wall_time_ms != null ? `<span>${(r.wall_time_ms / 1000).toFixed(1)}s</span>` : ''}
+      </div>
+    `;
+    item.addEventListener('click', () => loadRunDetail(r.id));
+    list.appendChild(item);
+  });
+}
+
+async function loadRunDetail(id) {
+  try {
+    const res = await fetch('/api/history/' + id);
+    if (!res.ok) return;
+    const run = await res.json();
+    // Populate the view with historical run data
+    resetPipeline();
+    document.getElementById('logScroll').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('queryInput').value = run.query;
+
+    if (run.agent_events) {
+      run.agent_events.forEach(evt => {
+        const agentId = evt.agent_name?.toLowerCase().replace(/\s+/g, '_');
+        if (agentState[agentId]) {
+          agentState[agentId].status = 'completed';
+          agentState[agentId].latency = evt.latency_ms;
+          agentState[agentId].score = evt.hallucination_score;
+          const tokens = { prompt: evt.prompt_tokens || 0, completion: evt.completion_tokens || 0 };
+          agentState[agentId].tokens = tokens;
+          updateNode(agentId, { status: 'completed' });
+        }
+        addLogEntry(
+          agentId || 'unknown',
+          evt.agent_name || agentId,
+          evt.output_preview || '(no output preview)',
+          { latency_ms: evt.latency_ms }
+        );
+      });
+    }
+    if (run.final_answer) {
+      document.getElementById('answerBody').textContent = run.final_answer;
+      document.getElementById('answerSection').classList.add('visible');
+    }
+    updateMetrics({
+      wall_time_ms: run.wall_time_ms,
+      token_usage: { prompt: run.prompt_tokens || 0, completion: run.completion_tokens || 0 },
+      hallucination_score: run.hallucination_score,
+      cost_estimate: null,
+    });
+    // Update connectors
+    AGENT_ORDER.forEach((id, i) => {
+      if (agentState[id]?.status === 'completed') updateConnector(i, 'done');
+    });
+
+    // Close history panel
+    closeHistory();
+  } catch (e) {
+    console.warn('Run detail load failed:', e);
+  }
+}
+
+function openHistory() {
+  document.getElementById('historyOverlay').classList.add('open');
+  document.getElementById('historyPanel').classList.add('open');
+  loadHistory();
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+  document.getElementById('historyPanel').classList.remove('open');
+}
+
+// ── Init ──
+renderPipeline();
+loadHistory();
+
+// ── Event Listeners ──
+document.getElementById('queryForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query || isRunning) return;
+  startRun(query);
+});
+
+document.getElementById('historyBtn').addEventListener('click', openHistory);
+document.getElementById('historyCloseBtn').addEventListener('click', closeHistory);
+document.getElementById('historyOverlay').addEventListener('click', closeHistory);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (eventSource) { eventSource.close(); eventSource = null; }
+  isRunning = false;
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = true;
+  document.getElementById('logScroll').innerHTML = '';
+  document.getElementById('answerSection').classList.remove('visible');
+  document.getElementById('emptyState').style.display = '';
+  resetPipeline();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeHistory();
+});
+
+// ── Keyboard shortcut: Ctrl+Enter to submit ──
+document.getElementById('queryInput').addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'Enter') {
+    document.getElementById('queryForm').dispatchEvent(new Event('submit'));
+  }
+});
+
+console.log('MultiAgent Pipeline Frontend loaded');
+console.log('Connect to SSE at /stream?query=...');
+console.log('History API at /api/history');
+</script>
+</body>
+</html>

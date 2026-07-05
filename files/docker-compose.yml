@@ -189,6 +189,8 @@ services:
     container_name: multiagent_nginx
     ports:
       - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     depends_on:
       - api
     healthcheck:
